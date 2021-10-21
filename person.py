@@ -8,4 +8,4 @@ class Person(BaseModel):
     status: str
     
 class AllPersons(BaseModel):
-    persons: List[Person]
+    persons: List[Person] = []

@@ -1,3 +1,4 @@
+from typing import List
 from flask import Flask, request, jsonify
 from person import AllPersons, Person
 import status_codes as StatusCodes
@@ -13,7 +14,7 @@ all_persons = AllPersons(persons = [
 @app.route('/')
 def hello_world():
     return 'hello'
-    
+
 @app.route('/people', methods=['GET'])
 def get_people():
     return all_persons.json(), StatusCodes.OK
@@ -68,8 +69,22 @@ def delete_by_id(id):
     
     all_persons.persons = updated_persons
     return jsonify('Person deleted'), StatusCodes.OK
+
+@app.route('/people/search/', methods=['GET'])
+def get_people_by_name_status():
+    target_name = request.args.get('name')
+    target_status = request.args.get('status')
     
+    if target_name is None or target_status is None:
+        return "Name and status must be defined.", StatusCodes.BAD_REQUEST
     
+    filtered_persons = AllPersons()
+    for p in all_persons.persons:
+        if p.name == target_name and p.status == target_status:
+            filtered_persons.persons.append(p)
     
+    return filtered_persons.json(), StatusCodes.OK
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
