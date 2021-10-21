@@ -7,5 +7,5 @@ class Person(BaseModel):
     surname: str 
     status: str
     
-class AllPersons(BaseModel):
-    persons: List[Person] = []
+class Course(BaseModel):
+    people: List[Person] = []
