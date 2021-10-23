@@ -1,7 +1,8 @@
-from typing import List
 from flask import Flask, request, jsonify
 from person import Course, Person
 import status_codes as StatusCodes
+import requests
+from pydantic import BaseModel
 
 app = Flask(__name__)
 
@@ -13,9 +14,30 @@ course = Course(people = [
     
 ])
 
-@app.route('/')
+class TimeServiceResponse(BaseModel):
+    current_time: str
+
+
+@app.route('/', methods=['GET'])
 def hello_world():
-    return 'hello'
+    return f'hello exact time is: ', StatusCodes.OK
+
+@app.route('/time', methods=['GET'])
+def get_time():
+    try:
+        res = requests.get('http://127.0.0.1:5001/time', timeout=3)
+        if res.status_code != StatusCodes.OK:
+            raise Exception()
+    except:    
+        return 'Service unavailable', StatusCodes.SERVICE_UNAVAILABLE
+    
+    try:
+        data: TimeServiceResponse = TimeServiceResponse.parse_obj(res.json())
+    except:
+        return 'Unexpected error', StatusCodes.INTERNAL_SERVER_ERROR
+    
+    return f'Currrent time is {data.current_time}', StatusCodes.OK
+
 
 @app.route('/people', methods=['GET'])
 def get_all_people():
@@ -27,7 +49,7 @@ def post_person():
         print(f'request: {request.json}')
         new_person = Person.parse_obj(request.json)
     except:
-        return jsonify('Invalid format', StatusCodes.BAD_REQUEST)
+        return jsonify('Invalid format'), StatusCodes.BAD_REQUEST
     
     course.people.append(new_person)
     return jsonify('Person added'), StatusCodes.OK
@@ -38,7 +60,7 @@ def update_name_by_id(id):
         new_name = request.json['name']
         target_id = int(id)
     except:
-        return jsonify('Invalid format', StatusCodes.BAD_REQUEST)
+        return jsonify('Invalid format'), StatusCodes.BAD_REQUEST
 
     person_found = False
     for person in course.people:
@@ -56,7 +78,7 @@ def delete_people_by_id(id):
     try:
         target_id = int(id)
     except:
-        return jsonify('Invalid format', StatusCodes.BAD_REQUEST)
+        return jsonify('Invalid format'), StatusCodes.BAD_REQUEST
 
     person_found = False
     updated_people = []
